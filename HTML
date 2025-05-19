@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #f7fafc; /* Light text */
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+        h1 {
+            font-family: 'Press Start 2P', monospace;
+            color: #63b3ed; /* Blue title */
+            margin-bottom: 2rem;
+            font-size: 2rem;
+                    }
+        #passwordInput {
+            padding: 0.75rem;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 0.375rem; /* Rounded corners */
+            border: 1px solid #4a5568; /* Darker border */
+            background-color: #2d3748; /* Dark input background */
+            color: #f7fafc; /* Light input text */
+            margin-bottom: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Smooth transition */
+        }
+        #passwordInput:focus {
+            outline: none;
+            border-color: #a0aec0; /* Lighter border on focus */
+            box-shadow: 0 0 0 3px rgba(160, 174, 192, 0.2); /* Subtle shadow on focus */
+        }
+
+        #strengthMeter {
+            width: 100%;
+            max-width: 400px;
+            height: 0.75rem;
+            background-color: #2d3748; /* Dark meter background */
+            margin-bottom: 1rem;
+            border-radius: 0.375rem; /* Rounded corners */
+            position: relative; /* For absolute positioning of the fill */
+            overflow: hidden; /* Ensure the fill stays within the rounded corners */
+        }
+        #strengthMeterFill {
+            height: 100%;
+            background-color: #48bb78; /* Green fill for strong password */
+            border-radius: 0.375rem; /* Rounded corners */
+            width: 0; /* Start with empty fill */
+            transition: width 0.3s ease-in-out; /* Smooth transition for fill */
+        }
+        .text-green-500 { color: #48bb78; }
+        .text-yellow-500 { color: #d69e2e; }
+        .text-red-500 { color: #e53e3e; }
+        #strengthText {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #f7fafc; /* Light text */
+        }
+        .feedback {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid;
+        }
+        .feedback-strong {
+            background-color: #edf7ed;
+            color: #1a5235;
+            border-color: #48bb78;
+        }
+        .feedback-medium {
+            background-color: #fefcbf;
+            color: #744210;
+            border-color: #d69e2e;
+        }
+        .feedback-weak {
+            background-color: #fff5f5;
+            color: #9b2c2c;
+            border-color: #e53e3e;
+        }
+        .feedback-tips {
+            background-color: #e2e8f0;
+            color: #2d3748;
+            border-color: #a0aec0;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            text-align: left;
+        }
+        .feedback-tips ul {
+            list-style-position: inside;
+            margin-bottom: 0.5rem;
+        }
+        .github-link {
+            margin-top: 2rem;
+            font-size: 1rem;
+        }
+        .github-link a {
+            color: #a0aec0;
+            text-decoration: underline;
+        }
+        .github-link a:hover {
+            color: #f7fafc;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-gray-50">
+    <div class="container">
+        <h1 class="text-blue-400 text-3xl sm:text-4xl md:text-5xl mb-6">Password Strength Analyzer</h1>
+        <input type="password" id="passwordInput" placeholder="Enter your password" class="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-600 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent mb-4">
+        <div id="strengthMeter" class="w-full sm:w-auto h-3 bg-gray-700 rounded-md mb-4">
+            <div id="strengthMeterFill" class="h-full bg-green-500 rounded-md" style="width: 0%"></div>
+        </div>
+        <p id="strengthText" class="text-gray-300 font-medium mb-4">Strength: Weak</p>
+
+        <div id="feedbackContainer">
+            </div>
+
+        <div class="feedback-tips">
+            <h2 class="text-lg font-semibold mb-2">Tips for a Strong Password</h2>
+            <ul>
+                <li>Use a minimum of 8 characters (12+ is recommended).</li>
+                <li>Include a mix of uppercase and lowercase letters.</li>
+                <li>Add numbers and symbols (e.g., !@#$%^&*).</li>
+                <li>Avoid common words, phrases, and patterns.</li>
+                <li>Don't use personal information (e.g., name, birthday).</li>
+                <li>Consider using a password manager to generate and store strong, unique passwords.</li>
+            </ul>
+        </div>
+
+        <div class="github-link">
+            <a href="https://github.com/your-username/password-strength-analyzer" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+        </div>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('passwordInput');
+        const strengthMeterFill = document.getElementById('strengthMeterFill');
+        const strengthText = document.getElementById('strengthText');
+        const feedbackContainer = document.getElementById('feedbackContainer');
+
+        function calculatePasswordStrength(password) {
+            let strength = 0;
+            const feedbackMessages = [];
+
+            if (password.length === 0) {
+                return { strength: 0, message: '', feedback: [] };
+            }
+
+            // Length bonus
+            if (password.length >= 8) {
+                strength += 10;
+                feedbackMessages.push({ type: 'success', message: 'Good length (+10)' });
+            } else {
+                feedbackMessages.push({ type: 'warning', message: 'Minimum 8 characters required' });
+            }
+            if (password.length >= 12) {
+                strength += 20;
+                feedbackMessages.push({ type: 'success', message: 'Great length (+20)' });
+            }
+
+            // Uppercase letters
+            if (password.match(/[A-Z]/g)) {
+                strength += 15;
+                feedbackMessages.push({ type: 'success', message: 'Uppercase letters (+15)' });
+            } else {
+                 feedbackMessages.push({ type: 'warning', message: 'Include uppercase letters' });
+            }
+
+            // Lowercase letters
+            if (password.match(/[a-z]/g)) {
+                strength += 15;
+                feedbackMessages.push({ type: 'success', message: 'Lowercase letters (+15)' });
+            } else {
+                feedbackMessages.push({ type: 'warning', message: 'Include lowercase letters' });
+            }
+
+            // Numbers
+            if (password.match(/[0-9]/g)) {
+                strength += 15;
+                feedbackMessages.push({ type: 'success', message: 'Numbers (+15)' });
+            } else {
+                feedbackMessages.push({ type: 'warning', message: 'Include numbers' });
+            }
+
+            // Symbols
+            if (password.match(/[^a-zA-Z0-9\s]/g)) {
+                strength += 20;
+                feedbackMessages.push({ type: 'success', message: 'Symbols (+20)' });
+            } else {
+                feedbackMessages.push({ type: 'warning', message: 'Include symbols' });
+            }
+
+            // Bonus for mix
+            if (password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9\s]).{8,}$/)) {
+                strength += 25;
+                feedbackMessages.push({ type: 'success', message: 'Great mix of character types (+25)' });
+            }
+
+            let strengthLevel = "Weak";
+            let strengthColor = "#e53e3e"; // Red
+            if (strength >= 80) {
+                strengthLevel = "Strong";
+                strengthColor = "#48bb78"; // Green
+            } else if (strength >= 60) {
+                strengthLevel = "Medium";
+                strengthColor = "#d69e2e"; // Yellow
+            } else if (strength > 0) {
+                strengthLevel = "Weak";
+                strengthColor = "#e53e3e"; // Red
+            } else {
+                strengthLevel = "";
+                strengthColor = "#e53e3e";
+            }
+
+            return { strength, message: strengthLevel, color: strengthColor, feedback: feedbackMessages };
+        }
+
+        function updateUI(password) {
+            const result = calculatePasswordStrength(password);
+            const strength = result.strength;
+            const message = result.message;
+            const color = result.color;
+            const feedbackMessages = result.feedback;
+
+            strengthText.textContent = message ? `Strength: ${message}` : '';
+            strengthText.style.color = color;
+            strengthMeterFill.style.width = `${Math.min(strength, 100)}%`;
+            strengthMeterFill.style.backgroundColor = color;
+
+            feedbackContainer.innerHTML = ''; // Clear previous feedback
+            feedbackMessages.forEach(feedbackItem => {
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.textContent = feedbackItem.message;
+                feedbackDiv.classList.add('feedback');
+                if (feedbackItem.type === 'success') {
+                    feedbackDiv.classList.add('feedback-strong');
+                } else if (feedbackItem.type === 'warning') {
+                    feedbackDiv.classList.add('feedback-medium');
+                } else {
+                    feedbackDiv.classList.add('feedback-weak');
+                }
+                feedbackContainer.appendChild(feedbackDiv);
+            });
+        }
+
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+            updateUI(password);
+        });
+
+        // Initial update in case there's a value in the input on load
+        updateUI(passwordInput.value);
+    </script>
+</body>
+</html>
